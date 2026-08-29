@@ -32,13 +32,29 @@ def load_planning():
     except Exception:
         return pd.DataFrame()
 
+@st.cache_data(ttl=600)
+def load_data(sheet_name):
+    try:
+        client = get_gspread_client()
+        spreadsheet = client.open_by_key(SHEET_ID)
+        sheet = spreadsheet.worksheet(sheet_name)
+        data = sheet.get_all_records()
+        df = pd.DataFrame(data)
+        if 'Data' in df.columns:
+            df['Data_Full'] = pd.to_datetime(df['Data'], errors='coerce')
+        if 'Valor' in df.columns:
+            df['Valor'] = pd.to_numeric(df['Valor'].astype(str).str.replace('R$', '', regex=False).str.replace('.', '', regex=False).str.replace(',', '.', regex=False).str.strip(), errors='coerce').fillna(0)
+        return df
+    except Exception:
+        return pd.DataFrame()
+
 def render(mask_val_func):
     st.header("🛒 Controle de Gastos & Planejamento")
     
     try:
         client = get_gspread_client()
         spreadsheet = client.open_by_key(SHEET_ID)
-        worksheets = [ws.title for ws in spreadsheet.worksheets()]
+        worksheets = [ws.title for ws in spreadsheet.worksheets() if ws.title != "Planejamento"]
         
         # Filtros na parte superior
         c1, c2 = st.columns([1, 2])

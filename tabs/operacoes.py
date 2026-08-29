@@ -106,7 +106,7 @@ def render(df, df_raw, mask_val):
             badge_var = "success" if side == 'C' else "danger"
             badge_text = "COMPRA" if side == 'C' else "VENDA"
             
-            with st.expander(f"{title_ativo} | {mask_val(row['Abertura'], 'time')} | Resultado: {mask_val(row['Res. Operação'])}", expanded=is_expanded):
+            with st.expander(f"{title_ativo} | {mask_val(row['Abertura'], 'time')} | Resultado: {mask_val(row.get('Res. Operação', row.get('Res. Intervalo Bruto', 0)))}", expanded=is_expanded):
                 col1, col2, col3 = st.columns([1.5, 3, 2.5])
                 
                 with col1:
@@ -173,12 +173,12 @@ def render(df, df_raw, mask_val):
                 
                 with col3:
                     st.write("**📊 Detalhes da Execução:**")
-                    st.write(f"- **Preço Médio:** {row['Médio']}")
-                    st.write(f"- **Resultado Bruto:** {row['Res. Intervalo Bruto']}")
-                    res_val = row['Res_Numeric']
+                    st.write(f"- **Preço Médio:** {row.get('Médio', 'N/A')}")
+                    st.write(f"- **Resultado Bruto:** {row.get('Res. Intervalo Bruto', 'N/A')}")
+                    res_val = row.get('Res_Numeric', 0)
                     res_color = "green" if res_val > 0 else "red" if res_val < 0 else "gray"
-                    st.markdown(f"- **P/L Final:** :{res_color}[{row['Res. Operação']}]")
-                    st.write(f"- **Tempo:** {row['Tempo Operação']}")
+                    st.markdown(f"- **P/L Final:** :{res_color}[{row.get('Res. Operação', row.get('Res. Intervalo Bruto', 0))}]")
+                    st.write(f"- **Tempo:** {row.get('Tempo Operação', 'N/A')}")
 
     # --- DATAFRAME ---
     target_cols = [

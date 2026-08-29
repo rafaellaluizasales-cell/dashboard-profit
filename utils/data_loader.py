@@ -6,6 +6,7 @@ import io
 import csv
 import datetime
 import yfinance as yf
+import re
 
 # --- Constants & Config ---
 # --- Constants & Config from Secrets ---
@@ -18,6 +19,21 @@ PATTERN_URL = st.secrets.get("PATTERN_URL")
 if not PATTERN_URL:
     st.error("PATTERN_URL não configurado em st.secrets")
     st.stop()
+
+def load_fixed_risk():
+    """Fetches the RISCO PERMITIDO (R) value from the public HOME sheet."""
+    try:
+        if not CSV_URL:
+            return 1000.0
+        home_url = re.sub(r"gid=\d+", "gid=593269905", CSV_URL)
+        content = _get_raw_content(home_url)
+        match = re.search(r"RISCO PERMITIDO\s*\(R\):\s*R\$\s*([\d,.]+)", content, re.IGNORECASE)
+        if match:
+            raw_val = match.group(1)
+            return float(raw_val.replace('.', '').replace(',', '.'))
+    except Exception:
+        pass
+    return 1000.0
 
 def load_data():
     """Main entry for unified data loading with multi-layer caching."""
@@ -75,6 +91,29 @@ def load_data():
             df['Group_Real'] = df['RealPattern'].map(get_group)
             
             df = df.drop(columns=['Ativo_Base', 'Merge_Dt'])
+
+        # Fallback garantido para todas as colunas essenciais
+        for col in ['Pattern', 'RealPattern', 'Tipo de Ordem', 'Management', 'HandError', 'TeriaPagado', 'Observation']:
+            if col not in df.columns:
+                if col in ['Pattern', 'RealPattern', 'Tipo de Ordem']:
+                    df[col] = "Não Classificado"
+                elif col == 'Management':
+                    df[col] = "Ok"
+                elif col == 'HandError':
+                    df[col] = "Sim"
+                elif col == 'TeriaPagado':
+                    df[col] = "Não"
+                else:
+                    df[col] = ""
+        
+        if 'Pattern_View' not in df.columns:
+            df['Pattern_View'] = df['Pattern'].map(normalize_pattern)
+        if 'RealPattern_View' not in df.columns:
+            df['RealPattern_View'] = df['RealPattern'].map(normalize_pattern)
+        if 'Group_Operado' not in df.columns:
+            df['Group_Operado'] = df['Pattern'].map(get_group) if 'get_group' in locals() else 'Outro'
+        if 'Group_Real' not in df.columns:
+            df['Group_Real'] = df['RealPattern'].map(get_group) if 'get_group' in locals() else 'Outro'
 
         # FINAL SAFETY: Ensure unique index and columns for Streamlit/Styler
         df = df.loc[:, ~df.columns.duplicated()].reset_index(drop=True)

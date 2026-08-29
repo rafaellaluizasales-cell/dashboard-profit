@@ -15,7 +15,7 @@ import datetime
 # --- Modules ---
 from utils import data_loader
 from utils import metrics as m
-from tabs import resumo, operacoes, graficos, calendario, ativos, relatorio, mentoria, swing, opcoes
+from tabs import resumo, operacoes, graficos, calendario, ativos, relatorio, mentoria, swing, opcoes, risk
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -281,7 +281,7 @@ df = df_raw[mask].copy()
 metrics = m.calculate_metrics(df)
 
 # --- NAVIGATION ---
-tab_options = ["🏠 Resumo", "📊 Swing Trade", "💰 Gastos", "📢 Mentoria", "⚡ Day Trade", "📈 Gráficos", "🌍 Ativos", "📅 Calendário", "📝 Relatórios", "💎 Opções"]
+tab_options = ["🏠 Resumo", "📊 Swing Trade", "💰 Gastos", "📢 Mentoria", "⚡ Day Trade", "🛡️ Risco", "📈 Gráficos", "🌍 Ativos", "📅 Calendário", "📝 Relatórios", "💎 Opções"]
 if "selected_main_tab" not in st.session_state: 
     st.session_state.selected_main_tab = "🏠 Resumo"
 else:
@@ -328,6 +328,9 @@ elif selected_main_tab == "📢 Mentoria":
 elif selected_main_tab == "⚡ Day Trade":
     operacoes.render(df, df_raw, mask_val)
 
+elif selected_main_tab == "🛡️ Risco":
+    risk.render()
+
 elif selected_main_tab == "📈 Gráficos":
     graficos.render(df, df_raw)
 
@@ -336,6 +339,9 @@ elif selected_main_tab == "🌍 Ativos":
 
 elif selected_main_tab == "📅 Calendário":
     calendario.render(df_raw, selected_asset)
+
+elif selected_main_tab == "📝 Relatórios":
+    relatorio.render()
 
 elif selected_main_tab == "💎 Opções":
     opcoes.render()

@@ -68,16 +68,21 @@ def calculate_metrics(df):
     # Violinada no BE Analysis
     # Definition: TeriaPagado == 'Sim' AND (Res_Numeric is near zero or negative)
     # We consider "near zero" as being between -30 and 30 (covering spread/commissions)
-    violinadas_df = df[
-        (df['TeriaPagado'].astype(str).str.upper().str.contains('SIM')) & 
-        (df['Res_Numeric'] <= 30)
-    ]
+    if 'TeriaPagado' in df.columns:
+        violinadas_df = df[
+            (df['TeriaPagado'].astype(str).str.upper().str.contains('SIM')) & 
+            (df['Res_Numeric'] <= 30)
+        ]
+    else:
+        violinadas_df = pd.DataFrame()
     num_violinadas = len(violinadas_df)
     
-    # Financial impact: If each violinada had paid a 2:1 target (assuming R$ 500 risk -> R$ 1000 profit)
-    # Total potential lost = num_violinadas * 1000 (theoretical)
-    # Or more accurately: what they *didn't* gain.
-    potencial_perdido = num_violinadas * 1000 # Using the user's standard R=500 -> 2R=1000
+    # Financial impact: If each violinada had paid a 2:1 target (assuming R$ 160 per contract)
+    # Total potential lost = (Qtd * 160) - Res_Numeric
+    if 'Qtd_Clean' in violinadas_df.columns and not violinadas_df.empty:
+        potencial_perdido = ((violinadas_df['Qtd_Clean'] * 160) - violinadas_df['Res_Numeric']).sum()
+    else:
+        potencial_perdido = num_violinadas * 2000 # Fallback
 
     return {
         'total_pnl': total_pnl,
